@@ -27,23 +27,34 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: Checkout repository
+      - name: Checkout infrastructure repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # === Build Backend ===
+      - name: Checkout backend repo
+        uses: actions/checkout@v4
+        with:
+          repository: jbroers/obscura_backend
+          path: obscura_backend
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Checkout frontend repo
+        uses: actions/checkout@v4
+        with:
+          repository: jbroers/obscura_frontend
+          path: obscura_frontend
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
       - name: Build backend image
         run: |
-          docker build -t obscura-backend ../obscura_backend
+          docker build -t obscura-backend ./obscura_backend
 
-      # === Build Frontend ===
       - name: Build frontend image
         run: |
-          docker build -t obscura-frontend ../obscura_frontend
+          docker build -t obscura-frontend ./obscura_frontend
 
-      # === Run Backend Tests ===
-      - name: Run backend tests with PostgreSQL
+      - name: Run backend tests
         run: |
           docker run --rm \
             --network host \
@@ -52,11 +63,9 @@ jobs:
             -e SPRING_DATASOURCE_PASSWORD=test \
             obscura-backend ./gradlew test --no-daemon
 
-      # === Verify Frontend Build (optional sanity check) ===
-      - name: Verify frontend build output
+      - name: Verify frontend build
         run: |
           docker run --rm obscura-frontend npm run build
 
-      # === Success Indicator ===
       - name: All tests passed
-        run: echo "✅ Backend + DB + Frontend builds OK"
+        run: echo "Backend + DB + Frontend builds OK"
