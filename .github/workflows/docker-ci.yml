@@ -61,6 +61,7 @@ jobs:
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/obscura_test \
             -e SPRING_DATASOURCE_USERNAME=test \
             -e SPRING_DATASOURCE_PASSWORD=test \
+            -e PHOTO_UPLOAD_DIR=/tmp/uploads \
             obscura-backend ./gradlew test --no-daemon
 
       - name: Verify frontend build
