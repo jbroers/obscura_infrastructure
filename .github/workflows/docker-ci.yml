@@ -56,13 +56,13 @@ jobs:
 
       - name: Run backend tests
         run: |
-          docker run --rm \
-            --network bridge \
-            -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/obscura_test \
-            -e SPRING_DATASOURCE_USERNAME=test \
-            -e SPRING_DATASOURCE_PASSWORD=test \
-            -e PHOTO_UPLOAD_DIR=/tmp/uploads \
-            obscura-backend ./gradlew test --no-daemon
+          cd obscura_backend
+          ./gradlew test --no-daemon \
+            -Dspring.datasource.url=jdbc:postgresql://localhost:5432/obscura_test \
+            -Dspring.datasource.username=test \
+            -Dspring.datasource.password=test \
+            -Dphoto.upload-dir=/tmp/uploads
+
 
       - name: Verify frontend build
         run: |
