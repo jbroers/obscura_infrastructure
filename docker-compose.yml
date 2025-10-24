@@ -1,18 +1,18 @@
 services:
   db:
-    image: mysql:8.0
+    image: postgres:15
     container_name: db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_ROOT_HOST: "%"
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -27,6 +27,7 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       PHOTO_UPLOAD_DIR: ${PHOTO_UPLOAD_DIR}
     volumes:
       - ./uploads:/uploads
@@ -40,10 +41,10 @@ services:
     build:
       context: ../obscura_frontend
       dockerfile: Dockerfile
+      args:
+        BACKEND_URL: ${BACKEND_URL}
     container_name: frontend
     env_file: .env.production
-    environment:
-      BACKEND_URL: ${BACKEND_URL}
     ports:
       - "3000:3000"
     depends_on:

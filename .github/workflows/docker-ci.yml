@@ -1,0 +1,62 @@
+name: Docker CI Build & Test
+
+on:
+  push:
+    branches: [ "docker-ci" ]
+  pull_request:
+    branches: [ "docker-ci" ]
+
+jobs:
+  build-test:
+    name: Build & Test Full Stack
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: obscura_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # === Build Backend ===
+      - name: Build backend image
+        run: |
+          docker build -t obscura-backend ../obscura_backend
+
+      # === Build Frontend ===
+      - name: Build frontend image
+        run: |
+          docker build -t obscura-frontend ../obscura_frontend
+
+      # === Run Backend Tests ===
+      - name: Run backend tests with PostgreSQL
+        run: |
+          docker run --rm \
+            --network host \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/obscura_test \
+            -e SPRING_DATASOURCE_USERNAME=test \
+            -e SPRING_DATASOURCE_PASSWORD=test \
+            obscura-backend ./gradlew test --no-daemon
+
+      # === Verify Frontend Build (optional sanity check) ===
+      - name: Verify frontend build output
+        run: |
+          docker run --rm obscura-frontend npm run build
+
+      # === Success Indicator ===
+      - name: All tests passed
+        run: echo "✅ Backend + DB + Frontend builds OK"
