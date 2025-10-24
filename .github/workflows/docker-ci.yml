@@ -77,13 +77,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push backend image to Docker Hub
-        run: |
-          docker tag obscura-backend yourdockerhubuser/obscura-backend:latest
-          docker push yourdockerhubuser/obscura-backend:latest
+      - name: Tag backend image
+        run: docker tag obscura-backend ${{ secrets.DOCKER_USERNAME }}/obscura-backend:latest
 
-      - name: Push frontend image to Docker Hub
-        run: |
-          docker tag obscura-frontend yourdockerhubuser/obscura-frontend:latest
-          docker push yourdockerhubuser/obscura-frontend:latest
+      - name: Push backend image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/obscura-backend:latest
+
+      - name: Tag frontend image
+        run: docker tag obscura-frontend ${{ secrets.DOCKER_USERNAME }}/obscura-frontend:latest
+
+      - name: Push frontend image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/obscura-frontend:latest
+
 
