@@ -63,6 +63,14 @@ jobs:
             -Dspring.datasource.password=test \
             -Dphoto.upload-dir=/tmp/uploads
 
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Verify frontend build
+        run: |
+          docker run --rm obscura-frontend npm run build
 
       - name: Verify frontend build
         run: |
