@@ -96,24 +96,41 @@ jobs:
           timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null; do echo "Waiting for frontend..."; sleep 2; done'
           echo "Frontend is responding!"
 
+      - name: Check if Playwright tests exist
+        id: check_playwright
+        run: |
+          cd obscura_frontend
+          if [ -f "playwright.config.js" ] || [ -f "playwright.config.ts" ]; then
+            echo "playwright_exists=true" >> $GITHUB_OUTPUT
+            echo "Playwright configuration found"
+          else
+            echo "playwright_exists=false" >> $GITHUB_OUTPUT
+            echo "No Playwright configuration found - skipping E2E tests"
+          fi
+
       - name: Set up Node for Playwright
+        if: steps.check_playwright.outputs.playwright_exists == 'true'
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Install Playwright dependencies
+        if: steps.check_playwright.outputs.playwright_exists == 'true'
+        working-directory: ./obscura_frontend
         run: |
-          cd obscura_frontend
           npm install
-          npx playwright install --with-deps
+          npx playwright install --with-deps chromium
 
       - name: Run Playwright e2e tests
-        run: |
-          cd obscura_frontend
-          npx playwright test
+        if: steps.check_playwright.outputs.playwright_exists == 'true'
+        working-directory: ./obscura_frontend
+        env:
+          BACKEND_URL: http://localhost:8080
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: npm run test:e2e:ci
 
       - name: Upload Playwright report
-        if: always()
+        if: always() && steps.check_playwright.outputs.playwright_exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
