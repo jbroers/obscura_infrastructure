@@ -18,9 +18,7 @@ services:
       retries: 10
 
   backend:
-    build:
-      context: ../obscura_backend
-      dockerfile: Dockerfile
+    image: obscura-backend
     container_name: backend
     environment:
       SPRING_PROFILES_ACTIVE: ci
@@ -37,11 +35,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build:
-      context: ../obscura_frontend
-      dockerfile: Dockerfile
-      args:
-        BACKEND_URL: http://localhost:8080
+    image: obscura-frontend
     container_name: frontend
     ports:
       - "3000:3000"
