@@ -26,6 +26,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ci_test_password
       SPRING_DATASOURCE_USERNAME: ci_test_user
       PHOTO_UPLOAD_DIR: /uploads
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
     volumes:
       - ./uploads:/uploads
     ports:
