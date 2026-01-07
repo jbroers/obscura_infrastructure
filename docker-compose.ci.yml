@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:15
+    container_name: db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ci_test_password
+      POSTGRES_DB: obscura_ci
+      POSTGRES_USER: ci_test_user
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ci_test_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../obscura_backend
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ci
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/obscura_ci
+      SPRING_DATASOURCE_PASSWORD: ci_test_password
+      SPRING_DATASOURCE_USERNAME: ci_test_user
+      PHOTO_UPLOAD_DIR: /uploads
+    volumes:
+      - ./uploads:/uploads
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../obscura_frontend
+      dockerfile: Dockerfile
+      args:
+        BACKEND_URL: http://localhost:8080
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+
