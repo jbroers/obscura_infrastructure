@@ -2,9 +2,9 @@ name: Docker CI Build & Test
 
 on:
   push:
-    branches: [ "docker-ci" ]
+    branches: [ "docker-ci", "main" ]
   pull_request:
-    branches: [ "docker-ci" ]
+    branches: [ "docker-ci", "main" ]
 
 jobs:
   build-test:
@@ -64,9 +64,11 @@ jobs:
             -Dphoto.upload-dir=/tmp/uploads
 
       - name: SonarQube Scan
+        if: github.ref == 'refs/heads/main'
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
 
       - name: Start full stack with Docker Compose
         run: |
