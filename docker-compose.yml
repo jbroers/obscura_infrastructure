@@ -17,6 +17,25 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ../obscura_backend
@@ -28,13 +47,18 @@ services:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      PHOTO_UPLOAD_DIR: ${PHOTO_UPLOAD_DIR}
-    volumes:
-      - ./uploads:/uploads
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+
+      PHOTO_UPLOAD_DIR: /tmp/uploads
     ports:
       - "8080:8080"
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   frontend:
@@ -52,3 +76,4 @@ services:
 
 volumes:
   db_data:
+  minio_data:
