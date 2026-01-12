@@ -17,6 +17,25 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     image: obscura-backend
     container_name: backend
@@ -25,15 +44,20 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/obscura_ci
       SPRING_DATASOURCE_PASSWORD: ci_test_password
       SPRING_DATASOURCE_USERNAME: ci_test_user
-      PHOTO_UPLOAD_DIR: /uploads
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_NAME: obscura-photos
+
+      PHOTO_UPLOAD_DIR: /tmp/uploads
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
-    volumes:
-      - ./uploads:/uploads
     ports:
       - "8080:8080"
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   frontend:
@@ -46,4 +70,5 @@ services:
 
 volumes:
   db_data:
+  minio_data:
 
